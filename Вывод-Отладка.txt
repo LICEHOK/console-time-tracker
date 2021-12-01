@@ -1,0 +1,14 @@
+﻿"kursach.exe" (Win32). Загружено "C:\Users\doma1\source\repos\kursach\Debug\kursach.exe". Символы загружены.
+"kursach.exe" (Win32). Загружено "C:\Windows\SysWOW64\ntdll.dll". 
+"kursach.exe" (Win32). Загружено "C:\Windows\SysWOW64\kernel32.dll". 
+"kursach.exe" (Win32). Загружено "C:\Windows\SysWOW64\KernelBase.dll". 
+"kursach.exe" (Win32). Загружено "C:\Windows\SysWOW64\msvcp140d.dll". 
+"kursach.exe" (Win32). Загружено "C:\Windows\SysWOW64\vcruntime140d.dll". 
+"kursach.exe" (Win32). Загружено "C:\Windows\SysWOW64\ucrtbased.dll". 
+Поток 0x590 завершился с кодом 0 (0x0).
+"kursach.exe" (Win32). Загружено "C:\Windows\SysWOW64\kernel.appcore.dll". 
+"kursach.exe" (Win32). Загружено "C:\Windows\SysWOW64\msvcrt.dll". 
+"kursach.exe" (Win32). Загружено "C:\Windows\SysWOW64\rpcrt4.dll". 
+Поток 0x2994 завершился с кодом 0 (0x0).
+Поток 0x4d8c завершился с кодом 0 (0x0).
+Программа "[17164] kursach.exe" завершилась с кодом 0 (0x0).
