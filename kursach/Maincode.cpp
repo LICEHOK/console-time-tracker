@@ -4,17 +4,20 @@
 #include <malloc.h>
 #include <string>
 #include <vector>
+#include <iomanip>
+#include <chrono>
+#pragma warning(disable : 4996)
 
 
 using namespace std;
 struct DayPlan {
 	struct Planpoint* start;
+
 };
 struct Planpoint {
 	string task;
-	time_t seconds;
-	//int time;
-	bool checkbox=NULL;
+	time_t time_task;
+	bool checkbox = NULL;
 	Planpoint* next;
 };
 
@@ -25,96 +28,140 @@ struct DayPlan* create_DayPlan() {
 
 }
 
-
-
 void add_new_planpoint(struct DayPlan* plan) {
-	Planpoint* key = new Planpoint;
+	Planpoint* point = new Planpoint;
+	int check;
 	string Task;
+	time_t SettingTime;
+	int minutes, hours;
+
 	printf("add new planpoint:");
 	cin.ignore();
-    std::getline(cin, Task);
-	key->task = Task;
-	key->next = NULL;
-	if (plan->start == NULL) {
-		plan->start = key;
+	std::getline(cin, Task);
 
-	}
-	else
-	{
-		struct Planpoint* ion = plan->start;
-		while (1) {
-			if (ion->next == NULL) {
-				ion->next = key;
+	point->task = Task;
+	point->next = NULL;
+	printf("Do you wanna set a timer?:\n 1. Yes.\n 2. No.\n");
+	scanf_s("%d", &check);
+	switch (check) {
+	case 1:
+		printf("Set hours:");
+		scanf_s("%d", &hours);
+		while (hours > 23) {
+			printf("Incorrect data entry, 1.try again. \n 2.Get back \n");
+			scanf_s("%d", &check);
+			switch (check) {
+			case 1:
+				scanf_s("%d", &hours);
 				break;
-
-			}
-			else {
-				ion = ion->next;
+			default:
+				hours = 0;
+				break;
 			}
 		}
+		printf("Set minutes:");
+		scanf_s("%d", &minutes);
+		if (check != 1) {
+			while (minutes > 59) {
+				printf("Incorrect data entry");
+				scanf_s(".%d", &minutes);
+			}
+			break;
+	default:
+		break;
+		}
+
+		SettingTime = std::time(NULL);
+		SettingTime = SettingTime - SettingTime % 60;
+		SettingTime = SettingTime + (hours * 3600 + minutes * 60);
+		point->time_task = SettingTime;
+
+		if (plan->start == NULL) {
+			plan->start = point;
+
+		}
+		else
+		{
+			struct Planpoint* structpoint = plan->start;
+			while (1) {
+				if (structpoint->next == NULL) {
+					structpoint->next = point;
+					break;
+
+				}
+				else {
+					structpoint = structpoint->next;
+				}
+			}
+		}
+
 	}
 	return;
+
 }
 
 void delete_list(struct DayPlan* plan) {
-	struct Planpoint* delete1 = plan->start;
-	struct Planpoint* delete2;
-	if (delete1 == NULL) {
+	struct Planpoint* deletelist = plan->start;
+	struct Planpoint* nextdelete;
+	if (deletelist == NULL) {
 		return;
 
 	}
-	while (delete1->next != NULL) {
-		delete2 = delete1->next;
-		delete (delete1);
-		delete1 = delete2;
+	while (deletelist->next != NULL) {
+		nextdelete = deletelist->next;
+		delete (deletelist);
+		deletelist = nextdelete;
 	}
-	delete delete1;
+	delete deletelist;
 	plan->start = NULL;
 
 }
 void pop(struct DayPlan* l) {
-	struct Planpoint* s2 = l->start;
-	struct Planpoint* s = NULL;
-	struct Planpoint* swap = NULL;
-	string g;
-	bool check;
-	int n;
-	if (s2 == NULL)
+	struct Planpoint* poplist2 = l->start;
+	struct Planpoint* poplist = NULL;
+	string deleted_task;
+	time_t deleted_time;
+	bool deleted_check;
+	int point_to_delete;
+	if (poplist2 == NULL)
 	{
 		cout << "Uncorrect command\n";
 		return;
 	}
 	cout << "What planpoint are you want to delete?:\n";
-	cin >> n;
-	for (int i = 1; i < n; i++) {
-		s = s2;
-		s2 = s->next;
-		if (s2 == NULL)
+	cin >> point_to_delete;
+	for (int i = 1; i < point_to_delete; i++) {
+		poplist = poplist2;
+		poplist2 = poplist->next;
+		if (poplist2 == NULL)
 		{
 			cout << "Uncorrect command\n";
 			return;
 		}
 
 	}
-	while (s2->next != NULL) {
-		s = s2;
-		s2 = s->next;
-		  g = s->task;
-		  s->task = s2->task;
-		  s2->task = g;
-		  check = s->checkbox;
-		  s->checkbox = s2->checkbox;
-		  s2->checkbox = check;
+	while (poplist2->next != NULL) {
+		poplist = poplist2;
+		poplist2 = poplist->next;
+		deleted_task = poplist->task;
+		poplist->task = poplist2->task;
+		poplist2->task = deleted_task;
+		deleted_check = poplist->checkbox;
+		poplist->checkbox = poplist2->checkbox;
+		poplist2->checkbox = deleted_check;
+		deleted_time = poplist->time_task;
+		poplist->time_task = poplist2->time_task;
+		poplist2->time_task = deleted_time;
 	}
-	
-	delete s2;
-	s->next = NULL;
+
+	delete poplist2;
+	poplist->next = NULL;
 	return;
 
 }
 void show_list(struct DayPlan* plan)
 {
-	int n = 1;
+	int markcount = 1;
 	struct Planpoint* list = plan->start;
 	printf("\n______________________________________\n");
 	if (list == NULL)
@@ -127,25 +174,27 @@ void show_list(struct DayPlan* plan)
 	while (list->next != NULL)
 	{
 
-		cout << n << '.' << list->task;
+		cout << markcount << '.' << list->task;
 		if (list->checkbox == NULL) {
 			cout << " -";
 		}
 		else {
 			cout << " +";
 		}
+		cout << " Appointed time: " << ctime(&list->time_task);
 		printf("\n");
 		list = list->next;
-		n++;
+		markcount++;
 	}
 
-	cout << n << '.' << list->task;
+	cout << markcount << '.' << list->task;
 	if (list->checkbox == NULL) {
 		cout << " -";
 	}
 	else {
 		cout << " +";
 	}
+	cout << " Appointed time: " << ctime(&list->time_task);
 
 
 	printf("\n______________________________________\n");
@@ -163,17 +212,17 @@ void fill_CheckBox(struct DayPlan* plan) {
 	}
 	cout << "What planpoint are comleted?:\n";
 	cin >> n;
-		for (int i = 1; i < n; i++){
-			list = list->next;
-			if (list == NULL)
-			{
-				cout << "Uncorrect command\n";
-				return;
-			}
-			
+	for (int i = 1; i < n; i++) {
+		list = list->next;
+		if (list == NULL)
+		{
+			cout << "Uncorrect command\n";
+			return;
+		}
+
 	}
-		list->checkbox = true;
-		return;
+	list->checkbox = true;
+	return;
 }
 void menu(struct DayPlan* plan) {
 	int check = 0;
@@ -202,13 +251,12 @@ void menu(struct DayPlan* plan) {
 		case 5:
 			delete_list(plan);
 			break;
-		/*case 6:
-
-			break;*/
+			/*case 6:
+				break;*/
 		case 7:
 			break;
-		//case 0:
-			//break;
+			//case 0:
+				//break;
 		default:
 			printf("\nUncorrect command\n");
 			break;
