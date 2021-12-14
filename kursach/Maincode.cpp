@@ -28,7 +28,7 @@ struct DayPlan* create_DayPlan() {
 
 }
 
-void add_new_planpoint(struct DayPlan* plan) {
+int add_new_planpoint(struct DayPlan* plan, int Maincount) {
 	Planpoint* point = new Planpoint;
 	int check;
 	string Task;
@@ -48,7 +48,7 @@ void add_new_planpoint(struct DayPlan* plan) {
 		printf("Set hours:");
 		scanf_s("%d", &hours);
 		while (hours > 23) {
-			printf("Incorrect data entry, 1.try again. \n 2.Get back \n");
+			printf("Incorrect data entry, 1.Try again. \n 2.Get back \n");
 			scanf_s("%d", &check);
 			switch (check) {
 			case 1:
@@ -66,45 +66,122 @@ void add_new_planpoint(struct DayPlan* plan) {
 				printf("Incorrect data entry");
 				scanf_s(".%d", &minutes);
 			}
-			break;
-	default:
-		break;
 		}
+		switch (hours) {
+		case 0:
+			hours = 21;
+			break;
+		case 1:
+			hours = 22;
+			break;
+
+		case 2:
+			hours = 23;
+			break;
+		default:
+			hours = hours - 3;
+			break;
+		}
+
 
 		SettingTime = std::time(NULL);
-		SettingTime = SettingTime - SettingTime % 60;
-		SettingTime = SettingTime + (hours * 3600 + minutes * 60);
-		point->time_task = SettingTime;
-
-		if (plan->start == NULL) {
-			plan->start = point;
+		if (SettingTime % 86400 < (hours * 3600 + minutes * 60)) {
+			SettingTime = SettingTime - SettingTime % 86400;
+			SettingTime = SettingTime + (hours * 3600 + minutes * 60);
+		}
+		else {
+			SettingTime = SettingTime + 86400 - SettingTime % 86400;
+			SettingTime = SettingTime + (hours * 3600 + minutes * 60);
 
 		}
-		else
-		{
-			struct Planpoint* structpoint = plan->start;
-			while (1) {
-				if (structpoint->next == NULL) {
-					structpoint->next = point;
-					break;
 
-				}
-				else {
-					structpoint = structpoint->next;
-				}
+		break;
+	default:
+		SettingTime = NULL;
+		break;
+	}
+
+
+	point->time_task = SettingTime;
+
+	if (plan->start == NULL) {
+		plan->start = point;
+
+	}
+	else
+	{
+		struct Planpoint* structpoint = plan->start;
+		while (1) {
+			if (structpoint->next == NULL) {
+				structpoint->next = point;
+				break;
+
+			}
+			else {
+				structpoint = structpoint->next;
 			}
 		}
+	}
+
+	Maincount++;
+	return Maincount;
+
+}
+void time_sort(struct DayPlan* l, int Maincount)
+{
+	struct Planpoint* compare = l->start;
+	struct Planpoint* compare2 = l->start;
+	string  swaptask;
+	bool swapcheckbox;
+	for (int i = 0; i < Maincount - 1; i++) {
+		time_t compareTime = 3000000000;
+		compare = l->start;
+		compare2 = l->start;
+
+		for (int f = 0; f < i; f++) {
+			compare2 = compare2->next;
+			compare = compare->next;
+
+		}
+		for (int j = i; j < Maincount; j++) {
+			if (compare->time_task < compareTime) {
+				compareTime = compare->time_task;
+
+			}
+			compare = compare->next;
+		}
+		compare2 = l->start;
+		compare = l->start;
+		for (int f = 0; f < i; f++) {
+			compare2 = compare2->next;
+			compare = compare->next;
+		}
+
+		while (compare->time_task < compareTime) {
+			compare = compare->next;
+		}
+		compare = compare2;
+		compare2 = compare->next;
+		swaptask = compare->task;
+		compare->task = compare2->task;
+		compare2->task = swaptask;
+		swapcheckbox = compare->checkbox;
+		compare->checkbox = compare2->checkbox;
+		compare2->checkbox = swapcheckbox;
+		compareTime = compare->time_task;
+		compare->time_task = compare2->time_task;
+		compare2->time_task = compareTime;
+
 
 	}
 	return;
-
 }
 
-void delete_list(struct DayPlan* plan) {
+int delete_list(struct DayPlan* plan, int Maincount) {
 	struct Planpoint* deletelist = plan->start;
 	struct Planpoint* nextdelete;
 	if (deletelist == NULL) {
-		return;
+		return Maincount;
 
 	}
 	while (deletelist->next != NULL) {
@@ -114,9 +191,10 @@ void delete_list(struct DayPlan* plan) {
 	}
 	delete deletelist;
 	plan->start = NULL;
-
+	Maincount = 0;
+	return Maincount;
 }
-void pop(struct DayPlan* l) {
+int pop(struct DayPlan* l, int Maincount) {
 	struct Planpoint* poplist2 = l->start;
 	struct Planpoint* poplist = NULL;
 	string deleted_task;
@@ -126,8 +204,9 @@ void pop(struct DayPlan* l) {
 	if (poplist2 == NULL)
 	{
 		cout << "Uncorrect command\n";
-		return;
+		return Maincount;
 	}
+
 	cout << "What planpoint are you want to delete?:\n";
 	cin >> point_to_delete;
 	for (int i = 1; i < point_to_delete; i++) {
@@ -136,8 +215,9 @@ void pop(struct DayPlan* l) {
 		if (poplist2 == NULL)
 		{
 			cout << "Uncorrect command\n";
-			return;
+			return Maincount;
 		}
+
 
 	}
 	while (poplist2->next != NULL) {
@@ -155,8 +235,12 @@ void pop(struct DayPlan* l) {
 	}
 
 	delete poplist2;
-	poplist->next = NULL;
-	return;
+	if (poplist != NULL) {
+		poplist->next = NULL;
+	}
+	else l->start = NULL;
+	Maincount--;
+	return Maincount;
 
 }
 void show_list(struct DayPlan* plan)
@@ -181,7 +265,10 @@ void show_list(struct DayPlan* plan)
 		else {
 			cout << " +";
 		}
-		cout << " Appointed time: " << ctime(&list->time_task);
+		if (list->time_task != NULL) {
+			cout << " Appointed time: " << ctime(&list->time_task);
+
+		}
 		printf("\n");
 		list = list->next;
 		markcount++;
@@ -194,7 +281,11 @@ void show_list(struct DayPlan* plan)
 	else {
 		cout << " +";
 	}
-	cout << " Appointed time: " << ctime(&list->time_task);
+	if (list->time_task != NULL) {
+		cout << " Appointed time: " << ctime(&list->time_task);
+
+	}
+	printf("\n");
 
 
 	printf("\n______________________________________\n");
@@ -225,10 +316,11 @@ void fill_CheckBox(struct DayPlan* plan) {
 	return;
 }
 void menu(struct DayPlan* plan) {
+	int Maincount = 0;
 	int check = 0;
-	while (check != 7) {
+	while (check != 6) {
 		printf("**********************************************************************");
-		printf("\n1. Show Plan;\n2. Add new Planpoint;\n3. Delete Planpoint;\n4. Mark a completed Planpoint\n5. Delete all plan\n6. Sort for nothing\n7. Leave Programm\n");
+		printf("\n1. Show Plan;\n2. Add new Planpoint;\n3. Delete Planpoint;\n4. Mark a completed Planpoint\n5. Delete all plan\n6. Leave Programm\n");
 		printf("**********************************************************************\n");
 		printf("Choose action: ");
 		scanf_s("%d", &check);
@@ -236,24 +328,25 @@ void menu(struct DayPlan* plan) {
 
 		switch (check) {
 		case 1:
+			time_sort(plan, Maincount);
 			show_list(plan);
 			break;
 		case 2:
-			add_new_planpoint(plan);
+			Maincount = add_new_planpoint(plan, Maincount);
 			break;
 		case 3:
-			pop(plan);
+			Maincount = pop(plan, Maincount);
 			break;
 		case 4:
 			fill_CheckBox(plan);
 			break;
 
 		case 5:
-			delete_list(plan);
+			Maincount = delete_list(plan, Maincount);
 			break;
 			/*case 6:
 				break;*/
-		case 7:
+		case 6:
 			break;
 			//case 0:
 				//break;
