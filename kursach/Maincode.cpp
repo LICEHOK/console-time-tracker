@@ -28,6 +28,8 @@ struct DayPlan* create_DayPlan() {
 
 }
 
+
+
 int add_new_planpoint(struct DayPlan* plan, int Maincount) {
 	Planpoint* point = new Planpoint;
 	int check;
@@ -131,47 +133,42 @@ void time_sort(struct DayPlan* l, int Maincount)
 {
 	struct Planpoint* compare = l->start;
 	struct Planpoint* compare2 = l->start;
-	string  swaptask;
+	string swaptask;
 	bool swapcheckbox;
+
 	for (int i = 0; i < Maincount - 1; i++) {
 		time_t compareTime = 3000000000;
 		compare = l->start;
 		compare2 = l->start;
-
 		for (int f = 0; f < i; f++) {
-			compare2 = compare2->next;
 			compare = compare->next;
+			compare2 = compare2->next;
 
 		}
 		for (int j = i; j < Maincount; j++) {
-			if (compare->time_task < compareTime) {
-				compareTime = compare->time_task;
-
+			if (compareTime > compare2->time_task) {
+				compareTime = compare2->time_task;
+				swaptask = compare2->task;
+				swapcheckbox = compare2->checkbox;
 			}
-			compare = compare->next;
-		}
-		compare2 = l->start;
-		compare = l->start;
-		for (int f = 0; f < i; f++) {
 			compare2 = compare2->next;
+		}
+		compare = l->start;
+		compare2 = l->start;
+		for (int f = 0; f < i; f++) {
 			compare = compare->next;
+			compare2 = compare2->next;
+		}
+		while (compare2->time_task > compareTime) {
+			compare2 = compare2->next;
 		}
 
-		while (compare->time_task < compareTime) {
-			compare = compare->next;
-		}
-		compare = compare2;
-		compare2 = compare->next;
-		swaptask = compare->task;
-		compare->task = compare2->task;
-		compare2->task = swaptask;
-		swapcheckbox = compare->checkbox;
-		compare->checkbox = compare2->checkbox;
-		compare2->checkbox = swapcheckbox;
-		compareTime = compare->time_task;
-		compare->time_task = compare2->time_task;
-		compare2->time_task = compareTime;
-
+		compare2->time_task = compare->time_task;
+		compare->time_task = compareTime;
+		compare2->checkbox = compare->checkbox;
+		compare->checkbox = swapcheckbox;
+		compare2->task = compare->task;
+		compare->task = swaptask;
 
 	}
 	return;
@@ -245,6 +242,9 @@ int pop(struct DayPlan* l, int Maincount) {
 }
 void show_list(struct DayPlan* plan)
 {
+	time_t day = time(NULL);
+	day = day + (86400 - day % 86400);
+	cout << ctime(&day);
 	int markcount = 1;
 	struct Planpoint* list = plan->start;
 	printf("\n______________________________________\n");
@@ -257,7 +257,11 @@ void show_list(struct DayPlan* plan)
 	}
 	while (list->next != NULL)
 	{
-
+		if (day < list->time_task) {
+			day = 0;
+			printf("NEXT DAY\n");
+			printf("_______________________________________________\n");
+		}
 		cout << markcount << '.' << list->task;
 		if (list->checkbox == NULL) {
 			cout << " -";
@@ -273,7 +277,10 @@ void show_list(struct DayPlan* plan)
 		list = list->next;
 		markcount++;
 	}
-
+		if (day < list->time_task) {
+			printf("NEXT DAY\n");
+			printf("_______________________________________________\n");
+		}
 	cout << markcount << '.' << list->task;
 	if (list->checkbox == NULL) {
 		cout << " -";
