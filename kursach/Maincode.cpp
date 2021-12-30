@@ -1,24 +1,36 @@
 #include <iostream>
-#include <stdio.h>
+#include <cstdio>
 #include <ctime>
 #include <malloc.h>
 #include <string>
 #include <vector>
 #include <iomanip>
 #include <chrono>
+#include <cstdlib>
+#include <ratio>
+#include "sqlite\sqlite3.h"
+#pragma warning ( disable : 4703 )
 #pragma warning(disable : 4996)
-
-
 using namespace std;
+
 struct DayPlan {
 	struct Planpoint* start;
 
 };
+
 struct Planpoint {
 	string task;
 	time_t time_task;
 	bool checkbox = NULL;
 	Planpoint* next;
+};
+
+struct dbpoint {
+	string task;
+	int time_task;
+	bool checkbox = NULL;
+
+	
 };
 
 struct DayPlan* create_DayPlan() {
@@ -27,9 +39,133 @@ struct DayPlan* create_DayPlan() {
 	return dayname;
 
 }
+static int callback(void* NotUsed, int argc, char** argv, char** someName) {
+	for (int i = 0; i < argc; i++) {
+		cout << someName[i] << ": " << argv[i] << endl;
+	}
+	return 0;
+}
+static int integrate(void* NotUsed, int argc, char** argv, char** someName) {
+
+	int i;
+	dbpoint* some = (dbpoint*)NotUsed;
+		for (i = 0; i < argc; i++) {
+			if (strcmp(someName[i], "Planpoint_Name") == 0)
+				some->task = argv[1];
+			if (strcmp(someName[i], "Time") == 0)
+				some->time_task = atoi(argv[2]); 
+			if (strcmp(someName[i], "Checkbox") == 0)
+				some->checkbox = atoi(argv[3]);
+		}
+		
+		
+	return 0;
+}
+
+static int createTable(const char* dir)
+{
+	sqlite3* DB;
+	char* messageError;
+
+	string sql = "CREATE TABLE IF NOT EXISTS Day("
+		"ID          INT NOT NULL,"
+		"Planpoint_Name      TEXT NOT NULL, "
+		"Time   INT NOT NULL, "
+		"Checkbox     INT);";
 
 
+	int exit = 0;
+	exit = sqlite3_open(dir, &DB);
+	exit = sqlite3_exec(DB, sql.c_str(), NULL, 0, &messageError);
+	if (exit != SQLITE_OK) {
+		cerr << "Error in createTable function." << endl;
+		sqlite3_free(messageError);
+	}
+	else
 
+	sqlite3_close(DB);
+
+
+	return 0;
+}
+static int insertData(const char* dir,DayPlan* plan,int count) {
+	sqlite3* DB;
+	int exit;
+	char* messageError;
+	
+	struct Planpoint* list = plan->start;
+	for (int i = 1; i < count; i++) {
+		list = list->next;
+	}
+	sqlite3_open(dir, &DB);
+	if (list->checkbox == false) list->checkbox = 0;
+	else list->checkbox = 1;
+	if (list->time_task == NULL) list->time_task = 0;
+	string sql = "INSERT INTO Day (ID, Planpoint_Name, Time, Checkbox) VALUES (" + to_string(count) + ",'" + list->task + "'," + to_string(list->time_task) +"," + to_string(list->checkbox) + ");; ";
+	exit = sqlite3_exec(DB, sql.c_str(), NULL, 0, &messageError);
+
+	if (exit != SQLITE_OK) {
+		cerr << "Error Insert " << messageError << endl;
+		sqlite3_free(messageError);
+	}
+	else
+	sqlite3_close(DB);
+	
+		return 0;
+
+}
+
+int add_db_planpoint(struct DayPlan* plan, int Maincount, const char* s) {
+
+	sqlite3* DB;
+	Planpoint* point = new Planpoint;
+	dbpoint db;
+	char* messageError;
+	int check = 1;
+	string checktext = " ";
+	int exit = sqlite3_open(s, &DB);
+	
+		string add = "Select * FROM Day;";
+		exit = sqlite3_exec(DB, add.c_str(), integrate, &db, &messageError);
+		if (exit != 0) cout << messageError;
+		if (checktext != db.task) checktext = db.task;
+		else checktext = "";
+		point->task = db.task;
+		
+		point->time_task = db.time_task;
+		point->checkbox = db.checkbox;
+		point->next = NULL;
+		string to_del = "DELETE FROM Day WHERE ID=" + to_string(Maincount+1) + ";";
+		exit = sqlite3_exec(DB, to_del.c_str(), NULL, 0, &messageError);
+		if (checktext == "")  
+			return Maincount; 
+		if (plan->start == NULL) {
+			plan->start = point;
+			
+		}
+		else
+		{
+			struct Planpoint* structpoint = plan->start;
+
+			while (1) {
+				if (structpoint->next == NULL) {
+					structpoint->next = point;
+
+					break;
+
+				}
+				else {
+					structpoint = structpoint->next;
+				}
+			}
+
+
+		}
+		Maincount++;
+	
+	return Maincount;
+
+}
 int add_new_planpoint(struct DayPlan* plan, int Maincount) {
 	Planpoint* point = new Planpoint;
 	int check;
@@ -145,7 +281,7 @@ void time_sort(struct DayPlan* l, int Maincount)
 			compare2 = compare2->next;
 
 		}
-		for (int j = i; j < Maincount; j++) {
+		for (int j = i; j < Maincount-1; j++) {
 			if (compareTime > compare2->time_task) {
 				compareTime = compare2->time_task;
 				swaptask = compare2->task;
@@ -243,7 +379,7 @@ int pop(struct DayPlan* l, int Maincount) {
 void show_list(struct DayPlan* plan)
 {
 	time_t day = time(NULL);
-	day = day + (86400 - day % 86400);
+	day = day + (86400 - day % 86400)- 3*3600;
 	cout << ctime(&day);
 	int markcount = 1;
 	struct Planpoint* list = plan->start;
@@ -258,7 +394,7 @@ void show_list(struct DayPlan* plan)
 	while (list->next != NULL)
 	{
 		if (day < list->time_task) {
-			day = 0;
+			day =day+86400;
 			printf("NEXT DAY\n");
 			printf("_______________________________________________\n");
 		}
@@ -269,7 +405,7 @@ void show_list(struct DayPlan* plan)
 		else {
 			cout << " +";
 		}
-		if (list->time_task != NULL) {
+		if (list->time_task != NULL && list->time_task!= -858993460) {
 			cout << " Appointed time: " << ctime(&list->time_task);
 
 		}
@@ -288,7 +424,7 @@ void show_list(struct DayPlan* plan)
 	else {
 		cout << " +";
 	}
-	if (list->time_task != NULL) {
+	if (list->time_task != NULL && list->time_task != -858993460) {
 		cout << " Appointed time: " << ctime(&list->time_task);
 
 	}
@@ -322,9 +458,15 @@ void fill_CheckBox(struct DayPlan* plan) {
 	list->checkbox = true;
 	return;
 }
-void menu(struct DayPlan* plan) {
+void menu(struct DayPlan* plan, const char* dir ) {
+	createTable(dir);
 	int Maincount = 0;
 	int check = 0;
+	int compare_Maincount = 0;
+	do {
+		Maincount = add_db_planpoint(plan, Maincount, dir);
+		compare_Maincount++;
+	} while (compare_Maincount == Maincount);
 	while (check != 6) {
 		printf("**********************************************************************");
 		printf("\n1. Show Plan;\n2. Add new Planpoint;\n3. Delete Planpoint;\n4. Mark a completed Planpoint\n5. Delete all plan\n6. Leave Programm\n");
@@ -354,6 +496,9 @@ void menu(struct DayPlan* plan) {
 			/*case 6:
 				break;*/
 		case 6:
+			for (int i = Maincount; i >0; i--) {
+				insertData(dir, plan, i);
+			}
 			break;
 			//case 0:
 				//break;
@@ -368,8 +513,10 @@ void menu(struct DayPlan* plan) {
 
 }
 int main() {
-	struct DayPlan* plan = create_DayPlan();
-	menu(plan);
+	const char* dir = R"(C:\Users\gdima\source\repos\console-time-tracker\kursach\Plan_Data.db)";
 
+	struct DayPlan* plan = create_DayPlan();
+	menu(plan, dir);
+	
 	return 0;
 }
