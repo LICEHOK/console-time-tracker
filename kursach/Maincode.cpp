@@ -309,6 +309,53 @@ void time_sort(struct DayPlan* l, int Maincount)
 	}
 	return;
 }
+int emergency_pop(struct DayPlan* l, int Maincount, int point_to_delete) {
+	struct Planpoint* poplist2 = l->start;
+	struct Planpoint* poplist = NULL;
+	string deleted_task;
+	time_t deleted_time;
+	bool deleted_check;
+	if (poplist2 == NULL)
+	{
+		cout << "Uncorrect command\n";
+		return Maincount;
+	}
+
+	
+	for (int i = 1; i < point_to_delete; i++) {
+		poplist = poplist2;
+		poplist2 = poplist->next;
+		if (poplist2 == NULL)
+		{
+			cout << "Uncorrect command\n";
+			return Maincount;
+		}
+
+
+	}
+	while (poplist2->next != NULL) {
+		poplist = poplist2;
+		poplist2 = poplist->next;
+		deleted_task = poplist->task;
+		poplist->task = poplist2->task;
+		poplist2->task = deleted_task;
+		deleted_check = poplist->checkbox;
+		poplist->checkbox = poplist2->checkbox;
+		poplist2->checkbox = deleted_check;
+		deleted_time = poplist->time_task;
+		poplist->time_task = poplist2->time_task;
+		poplist2->time_task = deleted_time;
+	}
+
+	delete poplist2;
+	if (poplist != NULL) {
+		poplist->next = NULL;
+	}
+	else l->start = NULL;
+	Maincount--;
+	return Maincount;
+
+}
 
 int delete_list(struct DayPlan* plan, int Maincount) {
 	struct Planpoint* deletelist = plan->start;
@@ -376,11 +423,10 @@ int pop(struct DayPlan* l, int Maincount) {
 	return Maincount;
 
 }
-void show_list(struct DayPlan* plan)
+void show_list(struct DayPlan* plan, int Maincount)
 {
 	time_t day = time(NULL);
 	day = day + (86400 - day % 86400)- 3*3600;
-	cout << ctime(&day);
 	int markcount = 1;
 	struct Planpoint* list = plan->start;
 	printf("\n______________________________________\n");
@@ -393,6 +439,13 @@ void show_list(struct DayPlan* plan)
 	}
 	while (list->next != NULL)
 	{
+		if ((day - 86400) > list->time_task && list->time_task!=0) {
+			emergency_pop(plan, Maincount, markcount);
+			markcount++;
+			printf("\n");
+			if (list->next == NULL) break;
+		}
+		
 		if (day < list->time_task) {
 			day =day+86400;
 			printf("NEXT DAY\n");
@@ -408,6 +461,12 @@ void show_list(struct DayPlan* plan)
 		if (list->time_task != NULL && list->time_task!= -858993460) {
 			cout << " Appointed time: " << ctime(&list->time_task);
 
+		}
+		if (list->checkbox == 1 && (list->time_task == 0|| list->time_task == -858993460)) {
+			emergency_pop(plan, Maincount, markcount);
+			markcount++;
+			printf("\n");
+			if (list->next == NULL) break;
 		}
 		printf("\n");
 		list = list->next;
@@ -427,6 +486,13 @@ void show_list(struct DayPlan* plan)
 	if (list->time_task != NULL && list->time_task != -858993460) {
 		cout << " Appointed time: " << ctime(&list->time_task);
 
+	}
+	if (list->checkbox == 1 && (list->time_task == 0 || list->time_task == -858993460)) {
+		emergency_pop(plan, Maincount, markcount);
+	
+	}
+	if ((day - 86400) > list->time_task && list->time_task != 0) {
+		emergency_pop(plan, Maincount, markcount);
 	}
 	printf("\n");
 
@@ -478,7 +544,7 @@ void menu(struct DayPlan* plan, const char* dir ) {
 		switch (check) {
 		case 1:
 			time_sort(plan, Maincount);
-			show_list(plan);
+			show_list(plan,Maincount);
 			break;
 		case 2:
 			Maincount = add_new_planpoint(plan, Maincount);
