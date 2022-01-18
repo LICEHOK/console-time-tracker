@@ -179,14 +179,14 @@ int add_new_planpoint(struct DayPlan* plan, int Maincount) {
 
 	point->task = Task;
 	point->next = NULL;
-	printf("Do you wanna set a timer?:\n 1. Yes.\n 2. No.\n");
+	printf("Do you wanna set a time?:\n 1. Yes.\n 2. No.\n");
 	scanf_s("%d", &check);
 	switch (check) {
 	case 1:
 		printf("Set hours:");
 		scanf_s("%d", &hours);
 		while (hours > 23) {
-			printf("Incorrect data entry, 1.Try again. \n 2.Get back \n");
+			printf("Incorrect data entry:\n 1.Try again. \n 2.Get back \n");
 			scanf_s("%d", &check);
 			switch (check) {
 			case 1:
@@ -439,12 +439,6 @@ void show_list(struct DayPlan* plan, int Maincount)
 	}
 	while (list->next != NULL)
 	{
-		if ((day - 86400) > list->time_task && list->time_task!=0) {
-			emergency_pop(plan, Maincount, markcount);
-			markcount++;
-			printf("\n");
-			if (list->next == NULL) break;
-		}
 		
 		if (day < list->time_task) {
 			day =day+86400;
@@ -461,12 +455,6 @@ void show_list(struct DayPlan* plan, int Maincount)
 		if (list->time_task != NULL && list->time_task!= -858993460) {
 			cout << " Appointed time: " << ctime(&list->time_task);
 
-		}
-		if (list->checkbox == 1 && (list->time_task == 0|| list->time_task == -858993460)) {
-			emergency_pop(plan, Maincount, markcount);
-			markcount++;
-			printf("\n");
-			if (list->next == NULL) break;
 		}
 		printf("\n");
 		list = list->next;
@@ -487,20 +475,45 @@ void show_list(struct DayPlan* plan, int Maincount)
 		cout << " Appointed time: " << ctime(&list->time_task);
 
 	}
-	if (list->checkbox == 1 && (list->time_task == 0 || list->time_task == -858993460)) {
-		emergency_pop(plan, Maincount, markcount);
-	
-	}
-	if ((day - 86400) > list->time_task && list->time_task != 0) {
-		emergency_pop(plan, Maincount, markcount);
-	}
+
 	printf("\n");
 
 
 	printf("\n______________________________________\n");
 
 
+	return;
+}
+int auto_delete(struct DayPlan* plan, int Maincount)
+{
+	time_t day = time(NULL);
+	day = day + (86400 - day % 86400) - 3 * 3600;
+	int markcount = 1;
+	struct Planpoint* list = plan->start;
 
+	if (list == NULL) return Maincount;
+	
+	while (list->next != NULL)
+	{
+		if ((day - 86400) > list->time_task && list->time_task != 0) {
+			Maincount=emergency_pop(plan, Maincount, markcount);
+			if (list->next == NULL) break;
+		}	
+		if (list->checkbox == 1 && (list->time_task == 0 || list->time_task == -858993460)) {
+			Maincount = emergency_pop(plan, Maincount, markcount);
+			if (list->next == NULL) break;
+		}
+		list = list->next;
+	markcount++;
+	}
+	if (list->checkbox == 1 && (list->time_task == 0 || list->time_task == -858993460)) {
+		Maincount = emergency_pop(plan, Maincount, markcount);
+
+	}
+	if ((day - 86400) > list->time_task && list->time_task != 0) {
+		Maincount = emergency_pop(plan, Maincount, markcount);
+	}
+	return Maincount;
 }
 void fill_CheckBox(struct DayPlan* plan) {
 	struct Planpoint* list = plan->start;
@@ -510,7 +523,7 @@ void fill_CheckBox(struct DayPlan* plan) {
 		cout << "Uncorrect command\n";
 		return;
 	}
-	cout << "What planpoint are comleted?:\n";
+	cout << "What planpoint changed his chechbox?:\n";
 	cin >> n;
 	for (int i = 1; i < n; i++) {
 		list = list->next;
@@ -521,7 +534,109 @@ void fill_CheckBox(struct DayPlan* plan) {
 		}
 
 	}
-	list->checkbox = true;
+	if (list->checkbox == true)
+		list->checkbox = false; else list->checkbox = true;
+	return;
+}
+void update_Planpoint(struct DayPlan* plan) {
+	struct Planpoint* list = plan->start;
+	int n;
+	int check;
+	if (list == NULL)
+	{
+		cout << "Uncorrect command\n";
+		return;
+	}
+	cout << "What planpoint are you wanna update?:";
+	cin >> n;
+	for (int i = 1; i < n; i++) {
+		list = list->next;
+		if (list == NULL)
+		{
+			cout << "Uncorrect command\n";
+			return;
+		}
+
+	}
+	cout << "What info are you wanna update?:\n1. Task. \n2. Time. \n3. No one. Get back.\n";
+	cin >> n;
+	string swapstring;
+	switch (n) {
+	case 1:
+		cout << "Add new task:";
+		
+		cin.ignore();
+		std::getline(cin, swapstring);
+		list->task = swapstring;
+		break;
+	case 2:
+		time_t SettingTime;
+		int minutes, hours;
+		printf("Do you wanna set a time?:\n 1. Yes.\n 2. No.\n");
+		scanf_s("%d", &check);
+		switch (check) {
+		case 1:
+			printf("Set hours:");
+			scanf_s("%d", &hours);
+			while (hours > 23) {
+				printf("Incorrect data entry:\n 1.Try again. \n 2.Get back \n");
+				scanf_s("%d", &check);
+				switch (check) {
+				case 1:
+					scanf_s("%d", &hours);
+					break;
+				default:
+					hours = 0;
+					break;
+				}
+			}
+			printf("Set minutes:");
+			scanf_s("%d", &minutes);
+			if (check != 1) {
+				while (minutes > 59) {
+					printf("Incorrect data entry");
+					scanf_s(".%d", &minutes);
+				}
+			}
+			switch (hours) {
+			case 0:
+				hours = 21;
+				break;
+			case 1:
+				hours = 22;
+				break;
+
+			case 2:
+				hours = 23;
+				break;
+			default:
+				hours = hours - 3;
+				break;
+			}
+
+
+			SettingTime = std::time(NULL);
+			if (SettingTime % 86400 < (hours * 3600 + minutes * 60)) {
+				SettingTime = SettingTime - SettingTime % 86400;
+				SettingTime = SettingTime + (hours * 3600 + minutes * 60);
+			}
+			else {
+				SettingTime = SettingTime + 86400 - SettingTime % 86400;
+				SettingTime = SettingTime + (hours * 3600 + minutes * 60);
+
+			}
+
+			break;
+		default:
+			SettingTime = NULL;
+			break;
+		}
+
+	default:
+		cout << "Uncorrect command\n";
+		break;
+	}
+
 	return;
 }
 void menu(struct DayPlan* plan, const char* dir ) {
@@ -535,7 +650,7 @@ void menu(struct DayPlan* plan, const char* dir ) {
 	} while (compare_Maincount == Maincount);
 	while (check != 6) {
 		printf("**********************************************************************");
-		printf("\n1. Show Plan;\n2. Add new Planpoint;\n3. Delete Planpoint;\n4. Mark a completed Planpoint\n5. Delete all plan\n6. Leave Programm\n");
+		printf("\n1. Show Plan;\n2. Add new planpoint;\n3. Delete planpoint;\n4. Change planpoint checkbox;\n5. Update planpoint info;\n6. Leave Programm\n");
 		printf("**********************************************************************\n");
 		printf("Choose action: ");
 		scanf_s("%d", &check);
@@ -557,26 +672,19 @@ void menu(struct DayPlan* plan, const char* dir ) {
 			break;
 
 		case 5:
-			Maincount = delete_list(plan, Maincount);
+			update_Planpoint(plan);
 			break;
-			/*case 6:
-				break;*/
-		case 6:
+		case 6: 
+			Maincount = auto_delete(plan, Maincount);
 			for (int i = Maincount; i >0; i--) {
 				insertData(dir, plan, i);
 			}
 			break;
-			//case 0:
-				//break;
 		default:
 			printf("\nUncorrect command\n");
 			break;
 		}
 	}
-
-
-
-
 }
 int main() {
 	const char* dir = R"(C:\Users\gdima\source\repos\console-time-tracker\kursach\Plan_Data.db)";
